@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.6.1] - 2024-01-23
+
+### Added
+- [requirements.txt] Needed Python packages for this scripts to run
+
+### Changed
+- [essstat.py] Refactoring main script for readability and pep8 compatibility
+
+### Removed
+- [*.xls*], [*.cgi] Removed all Office sheets as this is a Zabbix controled environment
 
 ## [0.6.0] - 2022-06-21
 
