@@ -85,7 +85,7 @@ The apprach that this project does use, the web-based client, is problematic as 
 
 ## Implement into Zabbix
 
-### Installation next to an Agent
+### Installation with Agent2 on Ubuntu
 
 The script have to be exuted from a zabbix-agent which could reach teh switch (see comments above).
 
@@ -103,7 +103,8 @@ cp tplink.conf /etc/zabbix/zabbix_agent2.d/tplink.conf
 # Copy the executable
 cp essstat.py /usr/bin/essstat.py
 
-# Import the template and assign it to a host on your Zabbix Server (check Macro values for customization)
+# Import the template and assign it to a host on your Zabbix Server
+# (check Macro values for customization)
 ```
 
 ___
