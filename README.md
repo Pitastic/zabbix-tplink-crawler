@@ -25,8 +25,7 @@ The Easy Smart Switch family has a number of unresolved vulnerabilities, includi
 
 ## Major Components
 
-*essstat.py* is a lightweight utility is used to pull port statistics from the switch and output in a readily parsable format. Additional 
-code will be added to parse and either output or store these statistics.
+*essstat.py* is a lightweight utility is used to pull port statistics from the switch and output in a readily parsable format. See last chapter how to implement this in a Zabbix environment.
 
 
 ### essstat.py
@@ -83,6 +82,29 @@ This design and implementation has a number of issues that should cause some con
 The apprach that this project does use, the web-based client, is problematic as well. Using a TCP unicast connections is better, but SSL is not implemented by the switch. While it is possible to reconfigure the switch to use a different administrative username, there is only one username for accessing the switch. This precludes employing role-based access with a dedicated username for reading statistics only. The credential we use to grab the statistics could also be used to access the management interface allowing resetting of counters, reconfiguring the switch or even replacing the firmware. 
 
 **Worse still are the vulnerabilities reported in [CVE-2017-17746](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-17746)**. As described in [https://seclists.org/fulldisclosure/2017/Dec/67](https://seclists.org/fulldisclosure/2017/Dec/67), once a user from a given source IP address authenticates to the web-based management interface of the switch, any other user from that same source IP address is treated as authenticated. This condition is created by the execution of the Python scripts in this project, where other users logged into or tunneling through the same host would then have unauthenticated access to the management interface of the switch. This problem can be mitigated by running the scripts from a dedicated management host. Use of a dedicated out-of-band management LAN could offer protection as well, but these switches are unlikely to be used in such an elaborately structured environment.
+
+## Implement into Zabbix
+
+### Installation next to an Agent
+
+The script have to be exuted from a zabbix-agent which could reach teh switch (see comments above).
+
+You may need `sudo` privileges for the next steps.
+
+```bash
+# Get the Repo
+git clone https://github.com/Pitastic/zabbix-tplink-crawler
+cd zabbix-tplink-crawler
+
+# Edit config: Add password and IP of the switch
+nano tplink.conf
+cp tplink.conf /etc/zabbix/zabbix_agent2.d/tplink.conf
+
+# Copy the executable
+cp essstat.py /usr/bin/essstat.py
+
+# Import the template and assign it to a host on your Zabbix Server (check Macro values for customization)
+```
 
 ___
 
