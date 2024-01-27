@@ -104,7 +104,7 @@ cp tplink.conf /etc/zabbix/zabbix_agent2.d/tplink.conf
 cp essstat.py /usr/bin/essstat.py
 
 # Import the template and assign it to a host on your Zabbix Server
-# (check Macro values for customization)
+# and set the TPLINK_PASSWORD Macro from your Switch.
 ```
 
 ___

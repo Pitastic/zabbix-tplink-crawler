@@ -12,13 +12,18 @@ __email__ = "psmode@kitsnet.us"
 __status__ = "Beta"
 
 
-import argparse, pprint, re, requests, sys, json
+import argparse
+import pprint
+import re
+import requests
+import sys
+import json
 from datetime import datetime
 from bs4 import BeautifulSoup
 
 
 def fetch_text(
-    username: str, password: str, url: str, debug: bool = False) -> [BeautifulSoup, bool]:
+        username: str, password: str, url: str, debug: bool = False) -> [BeautifulSoup, bool]:
     """Getting the HTML cpontent from the Switch"""
     if debug:
         print(f"Credentials are: {username} - {password} - {url}")
@@ -26,7 +31,7 @@ def fetch_text(
     s = requests.Session()
 
     data = {"logon": "Login", "username": username, "password": password}
-    headers = { 'Referer': f'{url}/Logout.htm'}
+    headers = {'Referer': f'{url}/Logout.htm'}
     try:
         r = s.post(f'{url}/logon.cgi', data=data, headers=headers, timeout=5)
     except requests.exceptions.Timeout as _:
@@ -35,8 +40,8 @@ def fetch_text(
         sys.exit("ERROR: General error at login: "+str(err))
 
     headers = {'Referer': f'{url}/',
-            'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            'Upgrade-Insecure-Requests': "1" }
+               'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+               'Upgrade-Insecure-Requests': "1"}
     r = s.get(f'{url}/PortStatisticsRpm.htm', headers=headers, timeout=6)
 
     soup = BeautifulSoup(r.text, 'html.parser')
@@ -58,12 +63,12 @@ def fetch_text(
             pprint.pprint(soup.script)
 
     if r.status_code != 200:
-        sys.exit("ERROR: Login failure - bad credential?")
+        sys.exit("ERROR: Login failure - bad credentials?")
 
     return soup, convoluted
 
 
-def parse_text(soup:BeautifulSoup, debug: bool = False,
+def parse_text(soup: BeautifulSoup, debug: bool = False,
                mode_convoluted: bool = False) -> dict:
     """Parse the given text for port statistics"""
 
@@ -82,14 +87,11 @@ def parse_text(soup:BeautifulSoup, debug: bool = False,
             print(pattern.search(str(soup.script)).group(2))
 
     if mode_convoluted:
-        max_port_num = int(pattern.search(str(soup.head.find_all("script"))).group(2))
+        max_port_num = int(pattern.search(
+            str(soup.head.find_all("script"))).group(2))
 
     else:
         max_port_num = int(pattern.search(str(soup.script)).group(2))
-
-#    if not (o_statsonly or o_oneline or o_json):
-#        print(current_dt)
-#        print(f"max_port_num={max_port_num}")
 
     if mode_convoluted:
 
@@ -107,7 +109,8 @@ def parse_text(soup:BeautifulSoup, debug: bool = False,
         # In those, each data array has two extra 0 cells at the end. To remain compatible with
         # the balance of the code here, we need to add in these redundant entries so they can
         # be removed later. (smh)
-        script_vars = ('tmp_info:[' + i1.rstrip() + ' ' + i2.rstrip() + ',0,0]').replace(" ", ",")
+        script_vars = ('tmp_info:[' + i1.rstrip() +
+                       ' ' + i2.rstrip() + ',0,0]').replace(" ", ",")
 
     else:
         script_vars = re.compile(
@@ -138,7 +141,7 @@ def parse_text(soup:BeautifulSoup, debug: bool = False,
         e5 = {}
         ee = re.split(",", edict['tmp_info'])
 
-        for x in range (0, max_port_num):
+        for x in range(0, max_port_num):
             e3[x] = ee[(x*6)]
             e4[x] = ee[(x*6)+1]
             e5[(x*4)] = ee[(x*6)+2]
@@ -157,12 +160,13 @@ def parse_text(soup:BeautifulSoup, debug: bool = False,
 def output_parsed(stats: dict, debug: bool = False,
                   o_statsonly: bool = False,
                   o_oneline: bool = False,
-                  o_json: bool = False) -> None:
+                  o_json: bool = False,
+                  o_discover: bool = False) -> None:
     """Generate Script Output to stdout"""
 
     current_dt = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    if not (o_statsonly or o_oneline or o_json):
+    if not (o_statsonly or o_oneline or o_json or o_discover):
         print(current_dt)
         print(f"max_port_num={stats.get('max_port_num')}")
 
@@ -192,42 +196,56 @@ def output_parsed(stats: dict, debug: bool = False,
 
     for x in range(1, stats.get('max_port_num')+1):
 
+        if o_discover:
+            state = stats.get('entries')[0][x-1]
+            link_state = tp_link_status[stats.get('entries')[1][x-1]]
+            jlist.append({
+                "{#PORTNUMBER}": x,
+                "{#PORTSTATE}": state,
+                "{#PORTLINK}": link_state
+            })
+            continue
+
         pdict[x] = {}
 
         if (o_oneline or o_json):
-            pdict[x]['state'] = stats.get('entries')[0][ x-1 ]
-            pdict[x]['link_status'] = stats.get('entries')[1][ x-1 ]
+            pdict[x]['state'] = stats.get('entries')[0][x-1]
+            pdict[x]['link_status'] = stats.get('entries')[1][x-1]
 
         else:
-            pdict[x]['state'] = tp_state[ stats.get('entries')[0][x-1] ]
-            pdict[x]['link_status'] = tp_link_status[ stats.get('entries')[1][x-1] ]
+            pdict[x]['state'] = tp_state[stats.get('entries')[0][x-1]]
+            pdict[x]['link_status'] = tp_link_status[stats.get('entries')[
+                1][x-1]]
 
-        pdict[x]['TxGoodPkt'] = stats.get('entries')[2][ ((x-1)*4) ]
-        pdict[x]['TxBadPkt'] = stats.get('entries')[2][ ((x-1)*4)+1 ]
-        pdict[x]['RxGoodPkt'] = stats.get('entries')[2][ ((x-1)*4)+2 ]
-        pdict[x]['RxBadPkt'] = stats.get('entries')[2][ ((x-1)*4)+3 ]
+        pdict[x]['TxGoodPkt'] = stats.get('entries')[2][((x-1)*4)]
+        pdict[x]['TxBadPkt'] = stats.get('entries')[2][((x-1)*4)+1]
+        pdict[x]['RxGoodPkt'] = stats.get('entries')[2][((x-1)*4)+2]
+        pdict[x]['RxBadPkt'] = stats.get('entries')[2][((x-1)*4)+3]
 
         if x == stats.get('max_port_num'):
             my_end = "\n"
 
         if o_json:
-            z = { **{"port": x}, **pdict[x] }
-            jlist.append( z )
+            z = {**{"port": x}, **pdict[x]}
+            jlist.append(z)
+            continue
 
-        else:
-            print(output_format.format(x,
-                                    pdict[x]['state'],
-                                    pdict[x]['link_status'],
-                                    pdict[x]['TxGoodPkt'],
-                                    pdict[x]['TxBadPkt'],
-                                    pdict[x]['RxGoodPkt'],
-                                    pdict[x]['RxBadPkt']), end=my_end)
+        # Stats only
+        print(output_format.format(x,
+                                   pdict[x]['state'],
+                                   pdict[x]['link_status'],
+                                   pdict[x]['TxGoodPkt'],
+                                   pdict[x]['TxBadPkt'],
+                                   pdict[x]['RxGoodPkt'],
+                                   pdict[x]['RxBadPkt']), end=my_end)
 
     if o_json:
 
         for dictionary in jlist:
             for key, val in dictionary.items():
                 dictionary[key] = int(val)
+
+    if o_json or o_discover:
 
         json_object = json.dumps(jlist)
         print(json_object)
@@ -256,6 +274,8 @@ if __name__ == '__main__':
                         help='output post statistics only')
     parser.add_argument('-u', '--username', metavar='TPuser', required=False,
                         default='admin', help='username for switch access')
+    parser.add_argument('-c', '--discover', action='store_true',
+                        help='Zabbix Discovery mode outputs a list of ports only')
     args = vars(parser.parse_args())
 
     url = args['target']
@@ -273,4 +293,5 @@ if __name__ == '__main__':
     output_parsed(parsed,
                   o_statsonly=args['statsonly'],
                   o_oneline=args['1line'],
-                  o_json=args['json'])
+                  o_json=args['json'],
+                  o_discover=args['discover'])
