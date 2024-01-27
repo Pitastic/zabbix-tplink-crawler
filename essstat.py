@@ -198,24 +198,33 @@ def output_parsed(stats: dict, debug: bool = False,
 
         if o_discover:
             state = stats.get('entries')[0][x-1]
-            link_state = tp_link_status[stats.get('entries')[1][x-1]]
             jlist.append({
                 "{#PORTNUMBER}": x,
                 "{#PORTSTATE}": state,
-                "{#PORTLINK}": link_state
             })
             continue
 
         pdict[x] = {}
 
         if (o_oneline or o_json):
-            pdict[x]['state'] = stats.get('entries')[0][x-1]
-            pdict[x]['link_status'] = stats.get('entries')[1][x-1]
+            pdict[x]['state'] = tp_state.get(
+                stats.get('entries')[0][x-1],
+                'unknown'
+            )
+            pdict[x]['link_status'] = tp_link_status.get(
+                stats.get('entries')[1][x-1],
+                'unknown'
+            )
 
         else:
-            pdict[x]['state'] = tp_state[stats.get('entries')[0][x-1]]
-            pdict[x]['link_status'] = tp_link_status[stats.get('entries')[
-                1][x-1]]
+            pdict[x]['state'] = tp_state.get(
+                stats.get('entries')[0][x-1],
+                'unknown'
+            )
+            pdict[x]['link_status'] = tp_link_status.get(
+                stats.get('entries')[1][x-1],
+                'unknown'
+            )
 
         pdict[x]['TxGoodPkt'] = stats.get('entries')[2][((x-1)*4)]
         pdict[x]['TxBadPkt'] = stats.get('entries')[2][((x-1)*4)+1]
