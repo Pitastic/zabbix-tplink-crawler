@@ -1,3 +1,4 @@
+"""Parsing Stats via HTTP Request from a TP LINK Switch"""
 #!/usr/bin/env python3
 # coding: utf-8
 
@@ -15,10 +16,10 @@ __status__ = "Beta"
 import argparse
 import pprint
 import re
-import requests
 import sys
 import json
 from datetime import datetime
+import requests
 from bs4 import BeautifulSoup
 
 
@@ -247,12 +248,6 @@ def output_parsed(stats: dict, debug: bool = False,
                                    pdict[x]['TxBadPkt'],
                                    pdict[x]['RxGoodPkt'],
                                    pdict[x]['RxBadPkt']), end=my_end)
-
-    if o_json:
-
-        for dictionary in jlist:
-            for key, val in dictionary.items():
-                dictionary[key] = int(val)
 
     if o_json or o_discover:
 
