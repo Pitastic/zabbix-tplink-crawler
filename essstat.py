@@ -1,6 +1,6 @@
-"""Parsing Stats via HTTP Request from a TP LINK Switch"""
 #!/usr/bin/env python3
 # coding: utf-8
+"""Parsing Stats via HTTP Request from a TP LINK Switch"""
 
 
 __author__ = "Peter Smode"
